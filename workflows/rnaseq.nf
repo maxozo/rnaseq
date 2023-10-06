@@ -100,6 +100,7 @@ include { DESEQ2_QC as DESEQ2_QC_SALMON      } from '../modules/local/deseq2_qc'
 include { DUPRADAR                           } from '../modules/local/dupradar'
 include { MULTIQC                            } from '../modules/local/multiqc'
 include { MULTIQC_CUSTOM_BIOTYPE             } from '../modules/local/multiqc_custom_biotype'
+include { LEAFCUTTER                         } from '../modules/nf-core/leafcutter/main.nf'
 include { UMITOOLS_PREPAREFORRSEM as UMITOOLS_PREPAREFORSALMON } from '../modules/local/umitools_prepareforrsem.nf'
 
 //
@@ -572,6 +573,16 @@ workflow RNASEQ {
             ch_versions = ch_versions.mix(BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME.out.versions)
         }
     }
+
+    
+    // Here we add splicing analysis with Leafcutter.
+    // 
+    ch_genome_bam.join(ch_genome_bam_index, by: [0]).set{ch_bam_bai}
+    ch_bam_bai
+        .map { [ it[0].id, it[1], it[2]] }
+        .set { ch_bam }
+
+    LEAFCUTTER(ch_bam)
 
     //
     // Filter channels to get samples that passed STAR minimum mapping percentage
